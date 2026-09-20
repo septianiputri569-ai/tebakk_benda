@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tebak benda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--sky:#bfe6f7;--ink:#182747;--sun:#ffc93c;--leaf:#2fb380;--berry:#e5484d;--paper:#fffdf6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sky);color:var(--ink);font-family:'Nunito',system-ui,sans-serif;font-weight:600;min-height:100vh;display:flex;justify-content:center;padding:20px 16px 40px}
+main{width:100%;max-width:460px;display:grid;gap:16px;align-content:start}
+h1{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:2.2rem;line-height:1;margin:0}
+p{margin:0;line-height:1.5}
+[hidden]{display:none!important}
+.card{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:18px;display:grid;gap:12px}
+.small{font-size:.9rem;opacity:.75}
+.cam{position:relative;border:3px solid var(--ink);border-radius:20px;overflow:hidden;box-shadow:5px 5px 0 var(--ink);background:#000;aspect-ratio:4/3}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.badge{position:absolute;top:12px;left:12px;width:88px;height:88px;display:grid;place-items:center;background:var(--sun);border:3px solid var(--ink);border-radius:18px;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:3.6rem;line-height:1}
+.stats{display:flex;gap:10px}
+.pill{flex:1;background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:8px 12px;font-weight:800}
+.row{display:flex;gap:10px}
+.btn{font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:14px;padding:12px 18px;background:var(--sun);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+.btn.main{flex:1}
+.btn.ghost{background:var(--paper)}
+.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{opacity:.6;cursor:default}
+.btn:focus-visible{outline:3px solid var(--leaf);outline-offset:3px}
+.msg{min-height:3.4rem;border:3px solid var(--ink);border-radius:14px;padding:10px 14px;background:var(--paper);line-height:1.4;display:flex;align-items:center}
+.msg.ok{background:#c9f0de}
+.msg.no{background:#ffd9d9}
+@keyframes pop{50%{transform:scale(1.04)}}
+.msg.ok{animation:pop .3s}
+@media (prefers-reduced-motion:reduce){.msg.ok{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Tebak benda</h1>
+
+  <section class="card" id="intro">
+    <p>Kamu dapat satu huruf. Cari benda di sekitarmu yang namanya diawali huruf itu, arahkan ke kamera, lalu tekan Cek.</p>
+    <button class="btn" id="start">Nyalakan kamera</button>
+    <p class="small" id="status">Gambar diproses di perangkatmu dan tidak dikirim ke mana-mana.</p>
+  </section>
+
+  <section id="game" hidden style="display:grid;gap:16px">
+    <div class="cam">
+      <video id="video" playsinline muted></video>
+      <div class="badge" id="letter">?</div>
+    </div>
+    <div class="stats">
+      <div class="pill">Skor <span id="score">0</span></div>
+      <div class="pill">Beruntun <span id="streak">0</span></div>
+    </div>
+    <div class="msg" id="msg" role="status">Arahkan benda ke kamera, lalu tekan Cek.</div>
+    <div class="row">
+      <button class="btn main" id="check">Cek benda</button>
+      <button class="btn ghost" id="skip">Ganti huruf</button>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+<script>
+// Kamus: [label bahasa Inggris dari MobileNet, nama-nama dalam bahasa Indonesia].
+// Tambah baris baru di sini untuk menambah benda yang dikenali.
+const KAMUS = [
+  [['running shoe','loafer','sneaker'], ['sepatu']],
+  [['sandal'], ['sandal']],
+  [['sock'], ['kaus kaki']],
+  [['sunglass','sunglasses'], ['kacamata']],
+  [['cowboy hat','sombrero','bonnet','hat'], ['topi']],
+  [['backpack'], ['ransel','tas']],
+  [['purse','wallet'], ['dompet','tas']],
+  [['umbrella'], ['payung']],
+  [['jean'], ['celana']],
+  [['jersey','t-shirt','sweatshirt','cardigan'], ['baju','kaos']],
+  [['cellular telephone','cellphone','mobile phone'], ['ponsel','hp','telepon']],
+  [['laptop','notebook'], ['laptop']],
+  [['mouse'], ['tetikus','mouse']],
+  [['computer keyboard','keypad'], ['papan ketik','keyboard']],
+  [['monitor','screen','desktop computer'], ['monitor','layar']],
+  [['remote control'], ['remot']],
+  [['television'], ['televisi','tv']],
+  [['digital watch','analog clock','wall clock'], ['jam']],
+  [['ballpoint','fountain pen'], ['pulpen','pena']],
+  [['rubber eraser'], ['penghapus']],
+  [['pencil box'], ['kotak pensil']],
+  [['book jacket'], ['buku']],
+  [['envelope'], ['amplop']],
+  [['coffee mug','cup'], ['gelas','cangkir','mug']],
+  [['water bottle','pop bottle','beer bottle','wine bottle','pill bottle','water jug'], ['botol']],
+  [['soup bowl','mixing bowl'], ['mangkuk']],
+  [['plate'], ['piring']],
+  [['wooden spoon','ladle'], ['sendok']],
+  [['spatula'], ['spatula']],
+  [['frying pan','wok'], ['wajan']],
+  [['teapot'], ['teko']],
+  [['table lamp','lampshade'], ['lampu']],
+  [['folding chair','rocking chair','barber chair'], ['kursi']],
+  [['desk','dining table'], ['meja']],
+  [['pillow'], ['bantal']],
+  [['bath towel'], ['handuk']],
+  [['toilet tissue','paper towel'], ['tisu']],
+  [['candle'], ['lilin']],
+  [['vase'], ['vas']],
+  [['pot','flowerpot'], ['pot']],
+  [['bucket','pail'], ['ember']],
+  [['broom'], ['sapu']],
+  [['shopping basket','hamper'], ['keranjang']],
+  [['plastic bag'], ['plastik','kantong']],
+  [['padlock'], ['gembok']],
+  [['soccer ball','basketball','tennis ball','volleyball','golf ball','rugby ball'], ['bola']],
+  [['banana'], ['pisang']],
+  [['orange'], ['jeruk']],
+  [['lemon'], ['lemon']],
+  [['strawberry'], ['stroberi']],
+  [['pineapple'], ['nanas']],
+  [['granny smith'], ['apel']],
+  [['acoustic guitar','electric guitar'], ['gitar']],
+  [['headphone','earphone'], ['headset','earphone']],
+  [['bicycle','mountain bike'], ['sepeda']],
+  [['tabby','tiger cat','egyptian cat','persian cat','siamese cat'], ['kucing']],
+  [['teddy'], ['boneka']],
+  [['radio'], ['radio']],
+  [['lighter'], ['korek api']]
+].map(([en, id]) => ({ id, re: new RegExp('\\b(' + en.join('|') + ')\\b', 'i') }));
+
+const MIN_YAKIN = 0.15;   // batas minimal keyakinan AI (0 sampai 1)
+const HURUF = [...new Set(KAMUS.flatMap(k => k.id.map(w => w[0].toUpperCase())))];
+
+const $ = id => document.getElementById(id);
+let model, target = '', score = 0, streak = 0, busy = false;
+
+function setMsg(text, kind = '') {
+  const m = $('msg');
+  m.textContent = text;
+  m.className = 'msg ' + kind;
+}
+
+function newLetter() {
+  let next;
+  do { next = HURUF[Math.floor(Math.random() * HURUF.length)]; } while (next === target && HURUF.length > 1);
+  target = next;
+  $('letter').textContent = target;
+  setMsg('Cari benda berawalan ' + target + ', lalu tekan Cek.');
+}
+
+function updateStats() {
+  $('score').textContent = score;
+  $('streak').textContent = streak;
+}
+
+async function start() {
+  const btn = $('start');
+  btn.disabled = true;
+  btn.textContent = 'Menyiapkan kamera dan AI…';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    $('video').srcObject = stream;
+    await $('video').play();
+    model = await mobilenet.load({ version: 2, alpha: 1.0 });
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Coba lagi';
+    $('status').textContent = 'Kamera atau model gagal dimuat. Izinkan akses kamera, pastikan online, dan buka halaman lewat localhost atau HTTPS.';
+    console.error(e);
+    return;
+  }
+  $('intro').hidden = true;
+  $('game').hidden = false;
+  newLetter();
+}
+
+async function check() {
+  if (busy) return;
+  busy = true;
+  $('check').disabled = true;
+  setMsg('Lagi mengenali…');
+  try {
+    const preds = await model.classify($('video'), 5);
+    const known = [];
+    for (const p of preds) {
+      if (p.probability < MIN_YAKIN) continue;
+      const hit = KAMUS.find(k => k.re.test(p.className));
+      if (hit) known.push(hit);
+    }
+    const win = known.find(k => k.id.some(w => w[0].toUpperCase() === target));
+    if (win) {
+      const word = win.id.find(w => w[0].toUpperCase() === target);
+      score++; streak++; updateStats();
+      setMsg('Benar! ' + word + ' diawali ' + target + '.', 'ok');
+      setTimeout(() => { newLetter(); busy = false; $('check').disabled = false; }, 2000);
+      return;
+    }
+    streak = 0; updateStats();
+    if (known.length) {
+      const w = known[0].id[0];
+      setMsg('Itu ' + w + ', diawali ' + w[0].toUpperCase() + '. Cari yang berawalan ' + target + '.', 'no');
+    } else {
+      setMsg('Bendanya belum dikenali (AI melihat: ' + preds[0].className.split(',')[0] + '). Coba dari sudut lain atau lebih dekat.', 'no');
+    }
+  } catch (e) {
+    setMsg('Ada error saat mengenali. Coba lagi.', 'no');
+    console.error(e);
+  }
+  busy = false;
+  $('check').disabled = false;
+}
+
+$('start').addEventListener('click', start);
+$('check').addEventListener('click', check);
+$('skip').addEventListener('click', () => { if (busy) return; streak = 0; updateStats(); newLetter(); });
+</script>
+</body>
+</html>
