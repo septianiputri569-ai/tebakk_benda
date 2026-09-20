@@ -3,159 +3,297 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tebak cepat</title>
+<title>Tebak pasangan</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <style>
-:root{--sky:#bfe6f7;--ink:#182747;--sun:#ffc93c;--leaf:#2fb380;--berry:#e5484d;--paper:#fffdf6}
+:root{--bg:#ffdde8;--ink:#2b1a3d;--sun:#ffc93c;--leaf:#2fb380;--berry:#e5484d;--paper:#fffdf6}
 *{box-sizing:border-box}
-body{margin:0;background:var(--sky);color:var(--ink);font-family:'Nunito',system-ui,sans-serif;font-weight:600;min-height:100vh;display:flex;justify-content:center;padding:20px 16px 40px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Nunito',system-ui,sans-serif;font-weight:600;min-height:100vh;display:flex;justify-content:center;padding:20px 16px 40px}
 main{width:100%;max-width:460px;display:grid;gap:16px;align-content:start}
-h1,h2{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;line-height:1;margin:0}
+h1,h2{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;line-height:1.05;margin:0}
 h1{font-size:2.2rem}
-h2{font-size:1.8rem}
+h2{font-size:1.6rem}
 p{margin:0;line-height:1.5}
 [hidden]{display:none!important}
-.card{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:18px;display:grid;gap:12px}
+.card{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:18px;display:grid;gap:14px}
 .small{font-size:.9rem;opacity:.75}
 .stats{display:flex;gap:10px}
-.pill{flex:1;background:var(--paper);border:3px solid var(--ink);border-radius:14px;padding:8px 12px;font-weight:800}
-.hearts{color:var(--berry);letter-spacing:2px}
-.arena{display:grid;gap:14px}
-.top{display:flex;align-items:center;gap:16px}
-.badge{width:110px;height:110px;display:grid;place-items:center;background:var(--sun);border:3px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink);font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:4.6rem;line-height:1}
-.sisa{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:3rem;line-height:1}
-.sisa small{display:block;font-family:'Nunito',system-ui,sans-serif;font-size:.95rem;font-weight:700}
-.bar{height:18px;border:3px solid var(--ink);border-radius:12px;background:var(--paper);overflow:hidden}
-.bar i{display:block;height:100%;width:100%;background:var(--leaf)}
-.bar.low i{background:var(--berry)}
-input{width:100%;font:inherit;font-weight:800;font-size:1.3rem;padding:12px 14px;border:3px solid var(--ink);border-radius:14px;background:#fff;color:var(--ink)}
+.pill{flex:1;background:var(--bg);border:3px solid var(--ink);border-radius:14px;padding:8px 12px;font-weight:800}
+.q{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:1.6rem;line-height:1.2}
+.tag{display:inline-block;justify-self:start;background:var(--sun);border:3px solid var(--ink);border-radius:12px;padding:4px 12px;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:1.2rem}
+.tag.dare{background:var(--berry);color:#fff}
+input{width:100%;font:inherit;font-weight:800;font-size:1.1rem;padding:12px 14px;border:3px solid var(--ink);border-radius:14px;background:#fff;color:var(--ink)}
 input:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
 .row{display:flex;gap:10px}
-.btn{font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:14px;padding:12px 18px;background:var(--sun);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
-.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
-.btn:focus-visible{outline:3px solid var(--leaf);outline-offset:3px}
-.msg{min-height:3.4rem;border:3px solid var(--ink);border-radius:14px;padding:10px 14px;background:var(--paper);line-height:1.4;display:flex;align-items:center}
-.msg.ok{background:#c9f0de}
-.msg.no{background:#ffd9d9}
+.btn{flex:1;font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:14px;padding:12px 16px;background:var(--sun);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+.btn.yes{background:var(--leaf);color:#fff}
+.btn.no{background:var(--berry);color:#fff}
+.btn.ghost{background:var(--paper)}
+.btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{opacity:.6}
+.btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.wheel{position:relative;width:min(280px,80vw);aspect-ratio:1;margin:4px auto;border:3px solid var(--ink);border-radius:50%;background:conic-gradient(var(--sun) 0 180deg,var(--leaf) 180deg 360deg);box-shadow:4px 4px 0 var(--ink)}
+.lbl{position:absolute;top:50%;transform:translateY(-50%);width:36%;text-align:center;font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:1.15rem;line-height:1.1;word-break:break-word}
+.lbl.l{left:7%}
+.lbl.r{right:7%}
+.jarum{position:absolute;inset:0}
+.jarum::before{content:'';position:absolute;left:50%;top:11%;width:8px;height:39%;margin-left:-4px;background:var(--ink);border-radius:4px}
+.jarum::after{content:'';position:absolute;left:50%;top:2%;margin-left:-14px;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:26px solid var(--ink)}
+.hub{position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px 0 0 -12px;background:var(--paper);border:3px solid var(--ink);border-radius:50%}
 </style>
 </head>
 <body>
 <main>
-  <h1>Tebak cepat</h1>
+  <h1>Tebak pasangan</h1>
 
-  <section class="card" id="intro">
-    <p>Kamu dapat satu huruf. Ketik satu nama benda yang diawali huruf itu sebelum 5 detik habis. Kamu punya 3 nyawa.</p>
-    <button class="btn" id="mulai">Mulai main</button>
-    <p class="small">Rekor terbaik: <span id="rekor">0</span></p>
+  <section class="card" id="setup">
+    <p>Putar roda untuk menentukan siapa yang bertanya. Yang ditunjuk bertanya tentang dirinya, pasangannya menjawab. Kalau jawabannya benar, dapat 1 poin. Kalau salah, kena Truth (jawab jujur) atau Dare (tantangan).</p>
+    <input id="n1" placeholder="Nama pemain 1" maxlength="16" autocomplete="off">
+    <input id="n2" placeholder="Nama pemain 2" maxlength="16" autocomplete="off">
+    <button class="btn" id="go">Mulai main</button>
+    <p class="small">10 ronde. Kartunya dibuat seru dan nggak memalukan. Kalau ada yang nggak nyaman, ganti kartu.</p>
   </section>
 
-  <section id="play" class="arena" hidden>
+  <section class="card" id="spin" hidden>
     <div class="stats">
-      <div class="pill">Skor <span id="skor">0</span></div>
-      <div class="pill">Nyawa <span class="hearts" id="nyawa">♥♥♥</span></div>
+      <div class="pill" id="sp1"></div>
+      <div class="pill" id="sp2"></div>
     </div>
-    <div class="top">
-      <div class="badge" id="huruf">?</div>
-      <div class="sisa"><span id="detik">5</span><small>detik lagi</small></div>
+    <p class="small" id="rondeSpin"></p>
+    <div class="wheel">
+      <span class="lbl l" id="lbl0"></span>
+      <span class="lbl r" id="lbl1"></span>
+      <div class="jarum" id="jarum"></div>
+      <i class="hub"></i>
     </div>
-    <div class="bar" id="bar"><i id="bari"></i></div>
-    <input id="jawab" type="text" placeholder="Ketik nama benda" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="send" aria-label="Jawaban">
-    <div class="row">
-      <button class="btn" id="kirim" style="flex:1">Jawab</button>
-    </div>
-    <div class="msg" id="msg" role="status"></div>
+    <div class="q" id="hasilSpin"></div>
+    <button class="btn" id="putar">Putar roda</button>
+    <button class="btn yes" id="lanjut" hidden>Mulai bertanya</button>
   </section>
 
-  <section class="card" id="over" hidden>
-    <h2>Selesai</h2>
-    <p>Skor kamu <b id="skorAkhir">0</b>. Rekor terbaik <b id="rekorAkhir">0</b>.</p>
+  <section class="card" id="quiz" hidden>
+    <div class="stats">
+      <div class="pill" id="p1"></div>
+      <div class="pill" id="p2"></div>
+    </div>
+    <p class="small" id="ronde"></p>
+    <p id="turn"></p>
+    <p class="small" id="saran"></p>
+    <div class="q" id="q"></div>
+    <button class="btn ghost" id="gantiQ">Ganti pertanyaan</button>
+    <p id="nilai"></p>
+    <div class="row">
+      <button class="btn yes" id="benar">Benar</button>
+      <button class="btn no" id="salah">Salah</button>
+    </div>
+  </section>
+
+  <section class="card" id="pick" hidden>
+    <h2 id="pickText"></h2>
+    <div class="row">
+      <button class="btn" id="tTruth">Truth</button>
+      <button class="btn no" id="tDare">Dare</button>
+    </div>
+  </section>
+
+  <section class="card" id="card" hidden>
+    <span class="tag" id="tag"></span>
+    <p class="small" id="untuk"></p>
+    <div class="q" id="isi"></div>
+    <div class="row">
+      <button class="btn yes" id="selesai">Sudah dilakukan</button>
+      <button class="btn ghost" id="ganti"></button>
+    </div>
+  </section>
+
+  <section class="card" id="end" hidden>
+    <h2 id="hasil"></h2>
+    <p id="skorAkhir"></p>
+    <div class="tag dare" id="finalTag"></div>
+    <div class="q" id="finalIsi"></div>
     <button class="btn" id="lagi">Main lagi</button>
   </section>
 </main>
 
 <script>
-const HURUF = 'ABCDEGHIJKLMNOPRSTUW'.split('');
-const WAKTU = 5000, NYAWA = 3;
+// Pertanyaan disusun dari sudut pandang yang bertanya (dia yang tahu jawabannya).
+const QUIZ = [
+  'Apa makanan favoritku?','Minuman yang paling sering aku pesan?','Apa warna favoritku?',
+  'Lagu yang paling sering aku putar?','Hal apa yang paling bikin aku kesal?','Film atau series favoritku?',
+  'Tempat impian yang pengen aku kunjungi?','Apa hal pertama yang biasanya aku lakukan pas bangun tidur?',
+  'Apa ketakutan terbesarku?','Hewan favoritku?','Apa yang bikin aku ketawa paling keras?',
+  'Makanan yang nggak akan pernah aku makan?','Apa hobiku di waktu luang?','Kapan tanggal ulang tahunku?',
+  'Apa cita-citaku waktu kecil?','Apa yang biasanya aku lakukan kalau lagi sedih?','Kado apa yang paling aku suka?',
+  'Apa nama panggilanku waktu kecil?','Barang apa yang selalu aku bawa ke mana-mana?','Apa hal paling romantis menurutku?'
+];
+const TRUTH = [
+  'Kalau pasanganmu lagi tidur, pernah nggak kamu diam-diam keluar kamar atau rumah buat sesuatu yang dia nggak tahu? Jawab jujur.',
+  'Hal kecil apa dari pasanganmu yang diam-diam bikin kamu kesal?',
+  'Kapan terakhir kali kamu bohong kecil ke pasanganmu, dan soal apa?',
+  'Kapan pertama kali kamu sadar kamu suka sama pasanganmu?',
+  'Apa satu hal yang kamu pengen pasanganmu ubah sedikit, tapi belum berani bilang?',
+  'Chat atau foto lama apa yang masih kamu simpan diam-diam?',
+  'Apa yang bikin kamu cemburu belakangan ini?',
+  'Apa kebiasaan aneh kamu yang belum pernah kamu ceritain ke pasanganmu?',
+  'Kalau harus pilih antara pasanganmu dan makanan favoritmu, pilih mana? Jawab jujur dan kasih alasan.',
+  'Apa hal paling memalukan yang pernah kamu lakukan di depan pasanganmu?',
+  'Apa hal yang paling kamu suka dari pasanganmu tapi belum pernah kamu bilang?',
+  'Pernah nggak kamu diam-diam cari tahu sesuatu tentang pasanganmu? Apa itu?',
+  'Apa yang paling kamu takutkan dalam hubungan kalian?',
+  'Kejutan apa yang pernah pengen kamu bikin buat pasanganmu tapi belum kesampaian?',
+  'Panggilan sayang apa yang diam-diam paling kamu suka?'
+];
+const DARE = [
+  'Sebut 5 hal yang kamu suka dari pasanganmu dalam 20 detik.',
+  'Tirukan cara ketawa pasanganmu.',
+  'Nyanyikan satu bagian lagu favorit kalian dengan gaya opera.',
+  'Bikin puisi 4 baris tentang pasanganmu, sekarang juga.',
+  'Peluk pasanganmu selama 20 detik tanpa ketawa.',
+  'Tiru gaya jalan pasanganmu keliling ruangan.',
+  'Bilang "aku sayang kamu" dengan 3 gaya: sedih, marah, dan kayak pembawa berita.',
+  'Gambar wajah pasanganmu dalam 30 detik, lalu tunjukin hasilnya.',
+  'Pijat bahu pasanganmu selama 1 menit.',
+  'Ceritakan kenangan paling lucu kalian dengan gaya dongeng.',
+  'Kirim satu pesan manis ke pasanganmu sekarang, dan kirim beneran.',
+  'Bikin tarian 15 detik, lalu pasanganmu yang kasih nilai.',
+  'Bilang terima kasih untuk 3 hal kecil yang pernah dilakukan pasanganmu.',
+  'Tirukan suara hewan yang menurutmu paling mirip pasanganmu, dan jelasin kenapa.',
+  'Kasih julukan baru yang lucu buat pasanganmu dan pakai terus sampai game selesai.'
+];
+const FINAL = [
+  'Traktir pasanganmu makanan favoritnya minggu ini.',
+  'Beresin satu pekerjaan rumah yang biasanya dikerjakan pasanganmu.',
+  'Pijat pasanganmu selama 5 menit.',
+  'Pasanganmu yang pilih film buat nonton bareng malam ini, dan kamu nggak boleh protes.',
+  'Jadi asisten pasanganmu selama satu jam ke depan. Semua permintaan yang wajar harus dituruti.'
+];
+const SERI = 'Saling peluk 30 detik, lalu masing-masing sebut 3 hal yang kalian syukuri dari satu sama lain.';
+const RONDE = 10;
+
 const $ = id => document.getElementById(id);
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const layar = id => ['setup','spin','quiz','pick','card','end'].forEach(s => $(s).hidden = s !== id);
 
-let skor, nyawa, huruf = '', mulaiT, timer, dipakai, aktif = false, rekor = 0;
-try { rekor = +localStorage.getItem('tebakCepatRekor') || 0; } catch (e) {}
-$('rekor').textContent = rekor;
+let nama, skor, ronde, asker, kalah, jenis, skip, soal, si, deck, rot = 0, muter = false;
 
-function setMsg(t, k = '') { const m = $('msg'); m.textContent = t; m.className = 'msg ' + k; }
-function tampilNyawa() { $('nyawa').textContent = '♥'.repeat(nyawa) + '♡'.repeat(NYAWA - nyawa); }
-
-function mulaiGame() {
-  skor = 0; nyawa = NYAWA; dipakai = new Set();
-  $('skor').textContent = 0; tampilNyawa();
-  $('intro').hidden = true; $('over').hidden = true; $('play').hidden = false;
-  ronde();
+function isiSkor(a, b) {
+  $(a).textContent = nama[0] + ' ' + skor[0];
+  $(b).textContent = nama[1] + ' ' + skor[1];
 }
 
-function ronde() {
-  let next;
-  do { next = HURUF[Math.floor(Math.random() * HURUF.length)]; } while (next === huruf);
-  huruf = next;
-  $('huruf').textContent = huruf;
-  $('jawab').value = '';
-  $('jawab').focus();
-  setMsg('Ketik benda berawalan ' + huruf + '.');
-  aktif = true;
-  mulaiT = performance.now();
-  clearInterval(timer);
-  timer = setInterval(tick, 50);
-  tick();
+function mulai() {
+  nama = [$('n1').value.trim() || 'Pemain 1', $('n2').value.trim() || 'Pemain 2'];
+  skor = [0, 0]; ronde = 0; skip = [1, 1]; si = 0;
+  soal = shuffle(QUIZ);
+  deck = { truth: shuffle(TRUTH), dare: shuffle(DARE) };
+  $('lbl0').textContent = nama[0];
+  $('lbl1').textContent = nama[1];
+  siapSpin();
 }
 
-function tick() {
-  const sisa = WAKTU - (performance.now() - mulaiT);
-  $('bari').style.width = Math.max(0, sisa / WAKTU * 100) + '%';
-  $('bar').classList.toggle('low', sisa < 1500);
-  $('detik').textContent = Math.max(0, Math.ceil(sisa / 1000));
-  if (sisa <= 0 && aktif) salah('Waktu habis!');
+function siapSpin() {
+  if (ronde >= RONDE) return akhir();
+  isiSkor('sp1', 'sp2');
+  $('rondeSpin').textContent = 'Ronde ' + (ronde + 1) + ' dari ' + RONDE;
+  $('hasilSpin').textContent = 'Putar roda untuk menentukan siapa yang bertanya.';
+  $('putar').hidden = false; $('putar').disabled = false;
+  $('lanjut').hidden = true;
+  layar('spin');
 }
 
-function benar(w) {
-  aktif = false; clearInterval(timer);
-  skor++; dipakai.add(w);
-  $('skor').textContent = skor;
-  setMsg('Benar! ' + w + ' diawali ' + huruf + '.', 'ok');
-  setTimeout(ronde, 800);
+function putar() {
+  if (muter) return;
+  muter = true;
+  $('putar').disabled = true;
+  const w = Math.random() < 0.5 ? 0 : 1;              // 0 = nama di sisi kiri, 1 = nama di sisi kanan
+  const target = w === 0 ? 200 + Math.random() * 140  // jarum berhenti di setengah kiri (180-360)
+                         : 20 + Math.random() * 140;  // atau setengah kanan (0-180)
+  const cur = ((rot % 360) + 360) % 360;
+  rot += 1800 + ((target - cur + 360) % 360);
+  const dur = matchMedia('(prefers-reduced-motion: reduce)').matches ? 600 : 3600;
+  const j = $('jarum');
+  j.style.transition = 'transform ' + dur + 'ms cubic-bezier(.15,.7,.1,1)';
+  j.style.transform = 'rotate(' + rot + 'deg)';
+  setTimeout(() => {
+    asker = w; muter = false;
+    $('hasilSpin').textContent = nama[w] + ' yang bertanya, ' + nama[1 - w] + ' yang menjawab.';
+    $('putar').hidden = true;
+    $('lanjut').hidden = false;
+  }, dur + 100);
 }
 
-function salah(pesan) {
-  aktif = false; clearInterval(timer);
-  nyawa--; tampilNyawa();
-  setMsg(pesan + ' Nyawa berkurang.', 'no');
-  setTimeout(nyawa <= 0 ? selesai : ronde, 1300);
+function tampilSoal() { $('q').textContent = soal[si % soal.length]; }
+
+function tanya() {
+  const a = asker, b = 1 - a;
+  isiSkor('p1', 'p2');
+  $('ronde').textContent = 'Ronde ' + (ronde + 1) + ' dari ' + RONDE;
+  $('turn').textContent = nama[a] + ' bertanya, ' + nama[b] + ' menjawab.';
+  $('saran').textContent = 'Saran pertanyaan untuk ' + nama[a] + '. Boleh juga tanya hal lain yang kamu tahu jawabannya:';
+  $('nilai').textContent = nama[a] + ' yang menilai jawaban ' + nama[b] + ':';
+  tampilSoal();
+  layar('quiz');
 }
 
-function selesai() {
-  if (skor > rekor) {
-    rekor = skor;
-    try { localStorage.setItem('tebakCepatRekor', rekor); } catch (e) {}
+function jawab(benar) {
+  const b = 1 - asker;
+  if (benar) { skor[b]++; ronde++; siapSpin(); return; }
+  kalah = b;
+  $('pickText').textContent = nama[b] + ' salah. Pilih hukuman:';
+  layar('pick');
+}
+
+function tarik(j) {
+  jenis = j;
+  if (!deck[j].length) deck[j] = shuffle(j === 'truth' ? TRUTH : DARE);
+  tampilKartu(deck[j].pop());
+}
+
+function tampilKartu(teks) {
+  const t = $('tag');
+  t.textContent = jenis === 'truth' ? 'Truth' : 'Dare';
+  t.className = 'tag' + (jenis === 'dare' ? ' dare' : '');
+  $('untuk').textContent = jenis === 'truth' ? nama[kalah] + ', jawab jujur:' : nama[kalah] + ', lakukan:';
+  $('isi').textContent = teks;
+  const g = $('ganti');
+  g.hidden = skip[kalah] <= 0;
+  g.textContent = 'Ganti kartu (sisa ' + skip[kalah] + ')';
+  layar('card');
+}
+
+function ganti() {
+  if (skip[kalah] <= 0) return;
+  skip[kalah]--;
+  tarik(jenis);
+}
+
+function akhir() {
+  $('skorAkhir').textContent = nama[0] + ' ' + skor[0] + ', ' + nama[1] + ' ' + skor[1] + '.';
+  if (skor[0] === skor[1]) {
+    $('hasil').textContent = 'Seri! Kalian sama-sama kenal.';
+    $('finalTag').textContent = 'Tantangan bareng';
+    $('finalIsi').textContent = SERI;
+  } else {
+    const menang = skor[0] > skor[1] ? 0 : 1;
+    $('hasil').textContent = nama[menang] + ' menang!';
+    $('finalTag').textContent = 'Hukuman akhir untuk ' + nama[1 - menang];
+    $('finalIsi').textContent = FINAL[Math.floor(Math.random() * FINAL.length)];
   }
-  $('rekor').textContent = rekor;
-  $('skorAkhir').textContent = skor;
-  $('rekorAkhir').textContent = rekor;
-  $('play').hidden = true; $('over').hidden = false;
+  layar('end');
 }
 
-function kirim() {
-  if (!aktif) return;
-  const w = $('jawab').value.trim().toLowerCase();
-  if (!w) return;
-  if (!/^[a-z ]{3,}$/.test(w)) { setMsg('Tulis nama benda pakai huruf saja, minimal 3 huruf.', 'no'); return; }
-  if (dipakai.has(w)) { setMsg('Kata itu sudah dipakai. Cari yang lain.', 'no'); return; }
-  if (w[0].toUpperCase() !== huruf) { salah('"' + w + '" tidak diawali ' + huruf + '.'); return; }
-  benar(w);
-}
-
-$('mulai').addEventListener('click', mulaiGame);
-$('lagi').addEventListener('click', mulaiGame);
-$('kirim').addEventListener('click', kirim);
-$('jawab').addEventListener('keydown', e => { if (e.key === 'Enter') kirim(); });
+$('go').addEventListener('click', mulai);
+$('putar').addEventListener('click', putar);
+$('lanjut').addEventListener('click', tanya);
+$('gantiQ').addEventListener('click', () => { si++; tampilSoal(); });
+$('benar').addEventListener('click', () => jawab(true));
+$('salah').addEventListener('click', () => jawab(false));
+$('tTruth').addEventListener('click', () => tarik('truth'));
+$('tDare').addEventListener('click', () => tarik('dare'));
+$('ganti').addEventListener('click', ganti);
+$('selesai').addEventListener('click', () => { ronde++; siapSpin(); });
+$('lagi').addEventListener('click', () => layar('setup'));
 </script>
 </body>
 </html>
