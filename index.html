@@ -65,6 +65,7 @@ p{margin:0;line-height:1.5}
 
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <script>
 // Kamus: [label bahasa Inggris dari MobileNet, nama-nama dalam bahasa Indonesia].
 // Tambah baris baru di sini untuk menambah benda yang dikenali.
@@ -131,10 +132,28 @@ const KAMUS = [
 ].map(([en, id]) => ({ id, re: new RegExp('\\b(' + en.join('|') + ')\\b', 'i') }));
 
 const MIN_YAKIN = 0.15;   // batas minimal keyakinan AI (0 sampai 1)
-const HURUF = [...new Set(KAMUS.flatMap(k => k.id.map(w => w[0].toUpperCase())))];
+// Kamus untuk COCO-SSD (detektor benda, lebih jago menemukan benda di tengah latar ramai).
+// Kuncinya persis nama kelas COCO dalam bahasa Inggris.
+const KAMUS_COCO = {
+  'bicycle':['sepeda'], 'car':['mobil'], 'motorcycle':['motor'], 'bus':['bus'], 'truck':['truk'], 'boat':['perahu'],
+  'bench':['bangku'], 'bird':['burung'], 'cat':['kucing'], 'dog':['anjing'], 'horse':['kuda'], 'sheep':['domba'], 'cow':['sapi'],
+  'backpack':['ransel','tas'], 'umbrella':['payung'], 'handbag':['tas'], 'tie':['dasi'], 'suitcase':['koper'],
+  'sports ball':['bola'], 'kite':['layangan'], 'skateboard':['skateboard'],
+  'bottle':['botol'], 'wine glass':['gelas'], 'cup':['gelas','cangkir'], 'fork':['garpu'], 'knife':['pisau'],
+  'spoon':['sendok'], 'bowl':['mangkuk'], 'banana':['pisang'], 'apple':['apel'], 'orange':['jeruk'], 'carrot':['wortel'],
+  'broccoli':['brokoli'], 'cake':['kue'], 'donut':['donat'], 'pizza':['piza'], 'sandwich':['roti'],
+  'chair':['kursi'], 'couch':['sofa'], 'potted plant':['tanaman','pot'], 'bed':['kasur'], 'dining table':['meja'],
+  'tv':['televisi','tv'], 'laptop':['laptop'], 'mouse':['tetikus','mouse'], 'remote':['remot'], 'keyboard':['papan ketik','keyboard'],
+  'cell phone':['ponsel','hp','telepon'], 'microwave':['microwave'], 'oven':['oven'], 'sink':['wastafel'],
+  'refrigerator':['kulkas'], 'book':['buku'], 'clock':['jam'], 'vase':['vas'], 'scissors':['gunting'],
+  'teddy bear':['boneka'], 'toothbrush':['sikat gigi'], 'hair drier':['pengering rambut']
+};
+
+const MIN_YAKIN_COCO = 0.4;
+const HURUF = [...new Set([...KAMUS.map(k => k.id), ...Object.values(KAMUS_COCO)].flatMap(ids => ids.map(w => w[0].toUpperCase())))];
 
 const $ = id => document.getElementById(id);
-let model, target = '', score = 0, streak = 0, busy = false;
+let cocoModel, mobModel, target = '', score = 0, streak = 0, busy = false;
 
 function setMsg(text, kind = '') {
   const m = $('msg');
@@ -163,7 +182,10 @@ async function start() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     $('video').srcObject = stream;
     await $('video').play();
-    model = await mobilenet.load({ version: 2, alpha: 1.0 });
+    [cocoModel, mobModel] = await Promise.all([
+      cocoSsd.load({ base: 'mobilenet_v2' }),
+      mobilenet.load({ version: 2, alpha: 1.0 })
+    ]);
   } catch (e) {
     btn.disabled = false;
     btn.textContent = 'Coba lagi';
@@ -182,12 +204,21 @@ async function check() {
   $('check').disabled = true;
   setMsg('Lagi mengenali…');
   try {
-    const preds = await model.classify($('video'), 5);
-    const known = [];
+    const known = [];   // benda yang dikenali, dalam nama Indonesia
+    let dilihat = '';    // tebakan AI kalau tidak ada yang cocok di kamus
+    const dets = await cocoModel.detect($('video'));
+    for (const d of dets) {
+      if (d.score < MIN_YAKIN_COCO) continue;
+      const ids = KAMUS_COCO[d.class];
+      if (ids) known.push({ id: ids });
+      else if (!dilihat && d.class !== 'person') dilihat = d.class;
+    }
+    const preds = await mobModel.classify($('video'), 5);
     for (const p of preds) {
       if (p.probability < MIN_YAKIN) continue;
       const hit = KAMUS.find(k => k.re.test(p.className));
       if (hit) known.push(hit);
+      else if (!dilihat) dilihat = p.className.split(',')[0];
     }
     const win = known.find(k => k.id.some(w => w[0].toUpperCase() === target));
     if (win) {
@@ -202,7 +233,7 @@ async function check() {
       const w = known[0].id[0];
       setMsg('Itu ' + w + ', diawali ' + w[0].toUpperCase() + '. Cari yang berawalan ' + target + '.', 'no');
     } else {
-      setMsg('Bendanya belum dikenali (AI melihat: ' + preds[0].className.split(',')[0] + '). Coba dari sudut lain atau lebih dekat.', 'no');
+      setMsg('Bendanya belum dikenali (AI melihat: ' + (dilihat || preds[0].className.split(',')[0]) + '). Coba dari sudut lain atau lebih dekat.', 'no');
     }
   } catch (e) {
     setMsg('Ada error saat mengenali. Coba lagi.', 'no');
